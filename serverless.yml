@@ -13,6 +13,7 @@ resources:
   Resources:
     dynamodbTable:
       Type: AWS::DynamoDB::Table
+      DependsOn: serviceSharedDynamoDBCustomerManagedKey
       DeletionPolicy: Retain
       UpdateReplacePolicy: Retain
       Properties:
