@@ -66,6 +66,16 @@ resources:
           - ContributorInsightsSpecification: 
               Enabled: true
             Region: us-east-1
+            TableClass: STANDARD
+            SSESpecification:
+              KMSMasterKeyId: 
+                Fn::GetAtt: [serviceSharedDynamoDBCustomerManagedKey, Arn]
+            Tags: 
+              - Key: env
+                Value: demo-dynamodb-global-table
+          - ContributorInsightsSpecification: 
+              Enabled: true
+            Region: us-west-1
             TableClass: STANDARD_INFREQUENT_ACCESS
             SSESpecification:
               KMSMasterKeyId: 
