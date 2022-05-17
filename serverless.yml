@@ -1,0 +1,150 @@
+org: nadtakanfuthoem
+app: demo
+service: aws-dynamodb-global-table
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+
+custom:
+  TableName: demo
+  GlobalTableRegion: us-east-2
+
+resources:
+  Resources:
+    dynamodbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:custom.TableName}
+        BillingMode: PAY_PER_REQUEST
+        SSESpecification:
+          SSEEnabled: true
+          KMSMasterKeyId:
+            KMSMasterKeyId: 
+              Fn::GetAtt: [serviceSharedDynamoDBCustomerManagedKey, Arn]
+          SSEType: KMS
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TimeToLiveSpecification:
+          AttributeName: timeToLivef
+          Enabled: true
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        Tags:
+          - Key: env
+            Value: demo-dynamodb-global-table
+
+    dynamodbGlobalTable:
+      Type: AWS::DynamoDB::GlobalTable
+      DependsOn: serviceSharedDynamoDBCustomerManagedKey
+      Properties: 
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        Replicas: 
+          - ContributorInsightsSpecification: 
+              Enabled: true
+            Region: us-east-1
+            TableClass: STANDARD_INFREQUENT_ACCESS
+            SSESpecification:
+              KMSMasterKeyId: 
+                Fn::GetAtt: [serviceSharedDynamoDBCustomerManagedKey, Arn]
+            Tags: 
+              - Key: env
+                Value: demo-dynamodb-global-table
+        TableName: ${self:custom.TableName}-global-tb
+        SSESpecification:
+          SSEEnabled: true
+          SSEType: KMS
+        TimeToLiveSpecification: 
+          AttributeName: timeToLive
+          Enabled: true
+
+    serviceSharedDynamoDBCustomerManagedKey:
+      Type: AWS::KMS::Key
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        Description: Our symmetric key used to encrypt all DynamoDB tables in our application
+        EnableKeyRotation: true
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: serviceSharedDynamoDBKeyPolicy
+          Statement:
+            - Sid: Enable IAM User Permissions
+              Effect: Allow
+              Principal:
+                AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+              Action: kms:*
+              Resource: '*'
+            - Sid: Allow access for key administrators
+              Effect: Allow
+              Principal:
+                AWS:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/Engineer
+              Action:
+                - kms:Create*
+                - kms:Describe*
+                - kms:Enable*
+                - kms:List*
+                - kms:Put*
+                - kms:Update*
+                - kms:Revoke*
+                - kms:Disable*
+                - kms:Get*
+                - kms:Delete*
+                - kms:TagResource
+                - kms:UntagResource
+                - kms:ScheduleKeyDeletion
+                - kms:CancelKeyDeletion
+              Resource: '*'
+            - Sid: Allow access through Amazon DynamoDB for all principals in the account that are authorized to use Amazon DynamoDB
+              Effect: Allow
+              Principal:
+                AWS:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/Engineer
+              Action:
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+                - kms:CreateGrant
+              Resource: '*'
+              Condition:
+                StringLike:
+                  kms:ViaService: dynamodb.*.amazonaws.com
+            - Sid:  Allow DynamoDB to get information about the CMK
+              Effect: Allow
+              Principal:
+                Service:
+                  - dynamodb.amazonaws.com
+              Action:
+                - kms:Describe*
+                - kms:Get*
+                - kms:List*
+              Resource: '*'
