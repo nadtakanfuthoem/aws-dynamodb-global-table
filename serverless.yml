@@ -22,8 +22,7 @@ resources:
         SSESpecification:
           SSEEnabled: true
           KMSMasterKeyId:
-            KMSMasterKeyId: 
-              Fn::GetAtt: [serviceSharedDynamoDBCustomerManagedKey, Arn]
+            Fn::GetAtt: [serviceSharedDynamoDBCustomerManagedKey, Arn]
           SSEType: KMS
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
