@@ -1,0 +1,40 @@
+name: Deploy to dev environment
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+  
+    - name: actions/setup-node
+      uses: actions/setup-node@v3
+      with:
+        node-version: "14"
+
+    - name: install npm package
+      run: npm install
+
+    - name: install serverless framework
+      run: npm install serverless -g
+
+    - name: deploy to dev environment
+      run: serverless deploy
