@@ -14,8 +14,6 @@ resources:
     dynamodbTable:
       Type: AWS::DynamoDB::Table
       DependsOn: serviceSharedDynamoDBCustomerManagedKey
-      DeletionPolicy: Retain
-      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:custom.TableName}
         BillingMode: PAY_PER_REQUEST
@@ -93,10 +91,9 @@ resources:
 
     serviceSharedDynamoDBCustomerManagedKey:
       Type: AWS::KMS::Key
-      DeletionPolicy: Retain
-      UpdateReplacePolicy: Retain
       Properties:
         Description: Our symmetric key used to encrypt all DynamoDB tables in our application
+        MultiRegion: true
         EnableKeyRotation: true
         KeyPolicy:
           Version: '2012-10-17'
