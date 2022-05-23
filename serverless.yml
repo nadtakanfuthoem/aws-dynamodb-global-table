@@ -13,14 +13,13 @@ resources:
   Resources:
     dynamodbTable:
       Type: AWS::DynamoDB::Table
-      DependsOn: serviceSharedDynamoDBCustomerManagedKey
       Properties:
         TableName: ${self:custom.TableName}
         BillingMode: PAY_PER_REQUEST
         SSESpecification:
           SSEEnabled: true
           KMSMasterKeyId:
-            Fn::GetAtt: [serviceSharedDynamoDBCustomerManagedKey, Arn]
+            Fn::ImportValue: !Sub serviceSharedDynamoDBCustomerManagedKeyArn-us-east-1
           SSEType: KMS
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
@@ -45,7 +44,6 @@ resources:
 
     dynamodbGlobalTable:
       Type: AWS::DynamoDB::GlobalTable
-      DependsOn: serviceSharedDynamoDBCustomerManagedKey
       Properties: 
         BillingMode: PAY_PER_REQUEST
         KeySchema:
@@ -67,7 +65,7 @@ resources:
             TableClass: STANDARD
             SSESpecification:
               KMSMasterKeyId: 
-                Fn::GetAtt: [serviceSharedDynamoDBCustomerManagedKey, Arn]
+                Fn::ImportValue: !Sub serviceSharedDynamoDBCustomerManagedKeyArn-us-east-1
             Tags: 
               - Key: env
                 Value: demo-dynamodb-global-table
@@ -76,8 +74,7 @@ resources:
             Region: us-west-1
             TableClass: STANDARD_INFREQUENT_ACCESS
             SSESpecification:
-              KMSMasterKeyId: 
-                Fn::GetAtt: [serviceSharedDynamoDBCustomerManagedKey, Arn]
+              KMSMasterKeyId: ${file(./kms-stacks/us-west-1/outputs.yml):KMSMasterKeyId} # can't cross stack ref, need work
             Tags: 
               - Key: env
                 Value: demo-dynamodb-global-table
@@ -88,67 +85,3 @@ resources:
         TimeToLiveSpecification: 
           AttributeName: timeToLive
           Enabled: true
-
-    serviceSharedDynamoDBCustomerManagedKey:
-      Type: AWS::KMS::Key
-      Properties:
-        Description: Our symmetric key used to encrypt all DynamoDB tables in our application
-        MultiRegion: true
-        EnableKeyRotation: true
-        KeyPolicy:
-          Version: '2012-10-17'
-          Id: serviceSharedDynamoDBKeyPolicy
-          Statement:
-            - Sid: Enable IAM User Permissions
-              Effect: Allow
-              Principal:
-                AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
-              Action: kms:*
-              Resource: '*'
-            - Sid: Allow access for key administrators
-              Effect: Allow
-              Principal:
-                AWS:
-                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/Engineer
-              Action:
-                - kms:Create*
-                - kms:Describe*
-                - kms:Enable*
-                - kms:List*
-                - kms:Put*
-                - kms:Update*
-                - kms:Revoke*
-                - kms:Disable*
-                - kms:Get*
-                - kms:Delete*
-                - kms:TagResource
-                - kms:UntagResource
-                - kms:ScheduleKeyDeletion
-                - kms:CancelKeyDeletion
-              Resource: '*'
-            - Sid: Allow access through Amazon DynamoDB for all principals in the account that are authorized to use Amazon DynamoDB
-              Effect: Allow
-              Principal:
-                AWS:
-                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/Engineer
-              Action:
-                - kms:Encrypt
-                - kms:Decrypt
-                - kms:ReEncrypt*
-                - kms:GenerateDataKey*
-                - kms:DescribeKey
-                - kms:CreateGrant
-              Resource: '*'
-              Condition:
-                StringLike:
-                  kms:ViaService: dynamodb.*.amazonaws.com
-            - Sid:  Allow DynamoDB to get information about the CMK
-              Effect: Allow
-              Principal:
-                Service:
-                  - dynamodb.amazonaws.com
-              Action:
-                - kms:Describe*
-                - kms:Get*
-                - kms:List*
-              Resource: '*'
