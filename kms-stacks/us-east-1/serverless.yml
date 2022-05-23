@@ -1,0 +1,84 @@
+service: kms-stack-us-east-1
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+
+custom:
+  TableName: demo
+
+resources:
+  Resources:
+    serviceSharedDynamoDBCustomerManagedKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: Our symmetric key used to encrypt all DynamoDB tables in our application
+        MultiRegion: true
+        EnableKeyRotation: true
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: serviceSharedDynamoDBKeyPolicy
+          Statement:
+            - Sid: Enable IAM User Permissions
+              Effect: Allow
+              Principal:
+                AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+              Action: kms:*
+              Resource: '*'
+            - Sid: Allow access for key administrators
+              Effect: Allow
+              Principal:
+                AWS:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/Engineer
+              Action:
+                - kms:Create*
+                - kms:Describe*
+                - kms:Enable*
+                - kms:List*
+                - kms:Put*
+                - kms:Update*
+                - kms:Revoke*
+                - kms:Disable*
+                - kms:Get*
+                - kms:Delete*
+                - kms:TagResource
+                - kms:UntagResource
+                - kms:ScheduleKeyDeletion
+                - kms:CancelKeyDeletion
+              Resource: '*'
+            - Sid: Allow access through Amazon DynamoDB for all principals in the account that are authorized to use Amazon DynamoDB
+              Effect: Allow
+              Principal:
+                AWS:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/Engineer
+              Action:
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+                - kms:CreateGrant
+              Resource: '*'
+              Condition:
+                StringLike:
+                  kms:ViaService: dynamodb.*.amazonaws.com
+            - Sid:  Allow DynamoDB to get information about the CMK
+              Effect: Allow
+              Principal:
+                Service:
+                  - dynamodb.amazonaws.com
+              Action:
+                - kms:Describe*
+                - kms:Get*
+                - kms:List*
+              Resource: '*'
+
+  Outputs:
+    serviceSharedDynamoDBCustomerManagedKeyArn:
+      Description: serviceSharedDynamoDBCustomerManagedKey Arn
+      Value: 
+        !GetAtt serviceSharedDynamoDBCustomerManagedKey.Arn
+      Export:
+        Name: serviceSharedDynamoDBCustomerManagedKeyArn-${self:provider.region}
