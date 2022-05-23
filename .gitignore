@@ -4,3 +4,5 @@ jspm_packages
 
 # Serverless directories
 .serverless
+
+kms-stacks/us-west-1/outputs.yml
