@@ -1,0 +1,15 @@
+{
+  "name": "us-west-1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nadtakan Futhoem",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1141.0",
+    "cfn-response": "^1.0.1"
+  }
+}
