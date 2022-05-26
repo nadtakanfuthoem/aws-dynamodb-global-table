@@ -14,7 +14,7 @@ exports.handler = function (event, context) {
     cfn.describeStacks({ StackName: stackName }, function (err, data) {
       if (err) {
         responseData = { Error: "DescribeStacks call failed" };
-        console.log(responseData.Error + ":\\n", err);
+        console.error(responseData.Error + "\\n", err);
         response.send(event, context, response.FAILED, responseData);
       } else {
         data.Stacks[0].Outputs.forEach(function (output) {
