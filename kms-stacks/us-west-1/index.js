@@ -6,10 +6,13 @@ exports.handler = function (event, context) {
     return;
   }
   var stackName = event.ResourceProperties.StackName;
+  var REGION = event.ResourceProperties.Region;
+	const OutputKeys = event.ResourceProperties.OutputKeys;
+	console.log(OutputKeys);
   var responseData = {};
   if (stackName) {
     var aws = require("aws-sdk");
-    aws.config.update({region: 'us-east-1'});
+    aws.config.update({region: REGION});
     var cfn = new aws.CloudFormation();
     cfn.describeStacks({ StackName: stackName }, function (err, data) {
       if (err) {
@@ -17,10 +20,21 @@ exports.handler = function (event, context) {
         console.error(responseData.Error + "\\n", err);
         response.send(event, context, response.FAILED, responseData);
       } else {
+				console.log(JSON.stringify(data));
         data.Stacks[0].Outputs.forEach(function (output) {
-          responseData[output.OutputKey] = output.OutputValue;
+					OutputKeys.filter((item) => {
+						if (item === output.OutputKey) {
+							responseData[output.OutputKey] = output.OutputValue;
+						}
+					})
         });
-        response.send(event, context, response.SUCCESS, responseData);
+				if (responseData) {
+					response.send(event, context, response.SUCCESS, responseData);
+				} else {
+					responseData = { Error: 'response is empty'};
+					console.error(responseData.Error + '\\n', err);
+					response.send(event, context, response.FAILED, responseData);
+				}
       }
     });
   } else {

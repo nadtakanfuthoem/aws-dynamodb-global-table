@@ -16,9 +16,6 @@ functions:
     handler: index.handler
     timeout: 30
     role: LambdaExecutionRole
-    environment:
-      StackName: ${self:custom.StackName}
-      Region: ${self:provider.region}
 
 resources:
   Resources:
@@ -57,8 +54,11 @@ resources:
       Properties:
         ServiceToken:
           Fn::GetAtt: [LookupStackOutputsLambdaFunction, Arn]
-        StackName: kms-stack-us-east-1-dev
-        
+        StackName: kms-stack-us-east-1-dev # Your desirable stack name you want to look up their output value
+        Region: us-east-1 # Your desirable region that you want to look up their output value
+        OutputKeys:
+          - serviceSharedDynamoDBCustomerManagedKeyArn
+                  
     serviceSharedDynamoDBCustomerManagedKeyReplicaKey:
       Type: AWS::KMS::ReplicaKey
       DependsOn: DBStackReference
