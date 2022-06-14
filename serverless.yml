@@ -5,43 +5,13 @@ frameworkVersion: '3'
 provider:
   name: aws
   region: us-east-1
+  profile: nadtakanfuthoem-nadtakan
 
 custom:
   TableName: demo
 
 resources:
   Resources:
-    dynamodbTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:custom.TableName}
-        BillingMode: PAY_PER_REQUEST
-        SSESpecification:
-          SSEEnabled: true
-          KMSMasterKeyId:
-            Fn::ImportValue: !Sub serviceSharedDynamoDBCustomerManagedKeyArn-us-east-1
-          SSEType: KMS
-        PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: true
-        StreamSpecification:
-          StreamViewType: NEW_AND_OLD_IMAGES
-        TimeToLiveSpecification:
-          AttributeName: timeToLive
-          Enabled: true
-        KeySchema:
-          - AttributeName: pk
-            KeyType: HASH
-          - AttributeName: sk
-            KeyType: RANGE
-        AttributeDefinitions:
-          - AttributeName: pk
-            AttributeType: S
-          - AttributeName: sk
-            AttributeType: S
-        Tags:
-          - Key: env
-            Value: demo-dynamodb-global-table
-
     dynamodbGlobalTable:
       Type: AWS::DynamoDB::GlobalTable
       Properties: 
@@ -69,15 +39,15 @@ resources:
             Tags: 
               - Key: env
                 Value: demo-dynamodb-global-table
-          - ContributorInsightsSpecification: 
-              Enabled: true
-            Region: us-west-1
-            TableClass: STANDARD_INFREQUENT_ACCESS
-            SSESpecification:
-              KMSMasterKeyId: ${file(./kms-stacks/us-west-1/outputs.yml):KMSMasterKeyId} # can't cross stack ref, need work
-            Tags: 
-              - Key: env
-                Value: demo-dynamodb-global-table
+          # - ContributorInsightsSpecification: 
+          #     Enabled: true
+          #   Region: us-west-1
+          #   TableClass: STANDARD_INFREQUENT_ACCESS
+          #   SSESpecification:
+          #     KMSMasterKeyId: # Working on this tomorrow custom resources
+          #   Tags: 
+          #     - Key: env
+          #       Value: demo-dynamodb-global-table
         TableName: ${self:custom.TableName}-global-tb
         SSESpecification:
           SSEEnabled: true
