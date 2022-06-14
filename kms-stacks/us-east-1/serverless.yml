@@ -5,6 +5,7 @@ frameworkVersion: '3'
 provider:
   name: aws
   region: us-east-1
+  profile: nadtakanfuthoem-nadtakan
 
 resources:
   Resources:
@@ -24,43 +25,6 @@ resources:
                 AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
               Action: kms:*
               Resource: '*'
-            - Sid: Allow access for key administrators
-              Effect: Allow
-              Principal:
-                AWS:
-                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/Engineer
-              Action:
-                - kms:Create*
-                - kms:Describe*
-                - kms:Enable*
-                - kms:List*
-                - kms:Put*
-                - kms:Update*
-                - kms:Revoke*
-                - kms:Disable*
-                - kms:Get*
-                - kms:Delete*
-                - kms:TagResource
-                - kms:UntagResource
-                - kms:ScheduleKeyDeletion
-                - kms:CancelKeyDeletion
-              Resource: '*'
-            - Sid: Allow access through Amazon DynamoDB for all principals in the account that are authorized to use Amazon DynamoDB
-              Effect: Allow
-              Principal:
-                AWS:
-                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/Engineer
-              Action:
-                - kms:Encrypt
-                - kms:Decrypt
-                - kms:ReEncrypt*
-                - kms:GenerateDataKey*
-                - kms:DescribeKey
-                - kms:CreateGrant
-              Resource: '*'
-              Condition:
-                StringLike:
-                  kms:ViaService: dynamodb.*.amazonaws.com
             - Sid:  Allow DynamoDB to get information about the CMK
               Effect: Allow
               Principal:
